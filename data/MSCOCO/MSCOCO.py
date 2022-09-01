@@ -25,8 +25,8 @@ class MSCOCO(torch.utils.data.Dataset):
     def __init__(self, transform, data_split):
         self.transform = transform
         self.data_split = 'train' if data_split == 'train' else 'val'
-        self.img_path = osp.join('..', 'data', 'MSCOCO', 'images')
-        self.annot_path = osp.join('..', 'data', 'MSCOCO', 'annotations')
+        self.img_path = osp.join('..', 'data', 'MSCOCO', 'coco', 'images')
+        self.annot_path = osp.join('..', 'data', 'MSCOCO', 'coco', 'annotations')
         self.rootnet_output_path = osp.join('..', 'data', 'MSCOCO', 'rootnet_output', 'bbox_root_coco_output.json')
         self.fitting_thr = 3.0 # pixel in cfg.output_hm_shape space
 

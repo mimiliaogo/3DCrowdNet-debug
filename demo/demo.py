@@ -133,14 +133,14 @@ for img_name in sorted(pose2d_result.keys()):
         continue
 
     drawn_joints = []
-    c = coco_joint_list
+    c = coco_joint_list # MIMI:  people * joints(17) * coord(5)
     # manually assign the order of output meshes
     # coco_joint_list = [c[2], c[0], c[1], c[4], c[3]]
-
+    
     for idx in range(len(coco_joint_list)):
         """ 2D pose input setting & hard-coding for filtering """
         pose_thr = 0.1
-        coco_joint_img = np.asarray(coco_joint_list[idx])[:, :3]
+        coco_joint_img = np.asarray(coco_joint_list[idx])[:, :3] 
         coco_joint_img = add_pelvis(coco_joint_img, coco_joints_name)
         coco_joint_img = add_neck(coco_joint_img, coco_joints_name)
         coco_joint_valid = (coco_joint_img[:, 2].copy().reshape(-1, 1) > pose_thr).astype(np.float32)
@@ -166,7 +166,8 @@ for img_name in sorted(pose2d_result.keys()):
         if continue_check:
             continue
         drawn_joints.append(tmp_joint_img)
-
+        
+        # MIMI: coco_joint_img.(19, 3) coco_joint_valid (19, 1)
         """ Prepare model input """
         # prepare bbox
         bbox = get_bbox(coco_joint_img, coco_joint_valid[:, 0]) # xmin, ymin, width, height

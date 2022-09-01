@@ -21,6 +21,8 @@ class PW3D(torch.utils.data.Dataset):
     def __init__(self, transform, data_split):
         self.transform = transform
         self.data_split ='validation' if cfg.crowd else 'test'  # data_split
+    
+        
         self.data_path = osp.join('..', 'data', 'PW3D', 'data')
         self.human_bbox_root_dir = osp.join('..', 'data', 'PW3D', 'rootnet_output', 'bbox_root_pw3d_output.json')
 
@@ -49,6 +51,8 @@ class PW3D(torch.utils.data.Dataset):
         self.coco_joint_regressor = np.load(osp.join('..', 'data', 'MSCOCO', 'J_regressor_coco_hip_smpl.npy'))
 
         self.openpose_joints_name = ('Nose', 'Neck', 'R_Shoulder', 'R_Elbow', 'R_Wrist', 'L_Shoulder', 'L_Elbow', 'L_Wrist', 'R_Hip', 'R_Knee', 'R_Ankle', 'L_Hip',  'L_Knee', 'L_Ankle', 'R_Eye', 'L_Eye', 'R_Ear',  'L_Ear', 'Pelvis')
+        # mimi add openpose skeleton
+        self.openpose_skeleton = ((16, 14), (15, 17), (0, 14), (0, 15), (1, 0), (1, 2), (1, 5), (8, 1), (11, 1), (9, 8), (12, 11), (10, 9), (13, 12), (4, 3), (3, 2), (7, 6), (6, 5))
         self.conf_thr = 0.05
 
         self.datalist = self.load_data()
@@ -78,7 +82,12 @@ class PW3D(torch.utils.data.Dataset):
 
     def load_data(self):
 
-        db = COCO(osp.join(self.data_path, '3DPW_latest_' + self.data_split + '.json'))
+        # Mimi adds PARE occ dataset for evaluation
+        if cfg.occlude:
+            db = COCO(osp.join(self.data_path, '3DPW_mimi_occ_PARE.json'))
+        else:
+            db = COCO(osp.join(self.data_path, '3DPW_latest_' + self.data_split + '.json'))
+
         if self.data_split == 'test' and not cfg.use_gt_info:
             print("Get bounding box and root from " + self.human_bbox_root_dir)
             bbox_root_result = {}
@@ -88,7 +97,7 @@ class PW3D(torch.utils.data.Dataset):
                 ann_id = str(annot[i]['ann_id'])
                 bbox_root_result[ann_id] = {'bbox': np.array(annot[i]['bbox']), 'root': np.array(annot[i]['root_cam'])}
         elif cfg.crowd:
-            with open(osp.join(self.data_path, f'3DPW_{self.data_split}_crowd_hhrnet_result.json')) as f:
+            with open(osp.join(self.data_path, '2DPose_Detection', f'3DPW_{self.data_split}_crowd_hhrnet_result.json')) as f:
                 hhrnet_result = json.load(f)
             print("Load Higher-HRNet input")
 
@@ -295,6 +304,8 @@ class PW3D(torch.utils.data.Dataset):
             pose_coord_out_h36m = pose_coord_out_h36m[self.h36m_eval_joint, :]
             pose_coord_out_h36m_aligned = rigid_align(pose_coord_out_h36m, pose_coord_gt_h36m)
 
+            mpjpe = np.sqrt(
+                np.sum((pose_coord_out_h36m - pose_coord_gt_h36m) ** 2, 1)).mean() * 1000
             eval_result['mpjpe'].append(np.sqrt(
                 np.sum((pose_coord_out_h36m - pose_coord_gt_h36m) ** 2, 1)).mean() * 1000)  # meter -> milimeter
             eval_result['pa_mpjpe'].append(np.sqrt(np.sum((pose_coord_out_h36m_aligned - pose_coord_gt_h36m) ** 2,
@@ -304,62 +315,69 @@ class PW3D(torch.utils.data.Dataset):
             # compute MPVPE
             mesh_error = np.sqrt(np.sum((mesh_gt_cam - mesh_out_cam) ** 2, 1)).mean() * 1000
             eval_result['mpvpe'].append(mesh_error)
+            
+            # Mimi: visualize bad results
+            if mesh_error >= 150  or mpjpe >= 150:
+                vis_data_path = '/home/mtl519/Code/3DCrowdNet_RELEASE/output/test/vis-bad-3dpw-test'
+                if cfg.render:
+                    img = cv2.imread(annot['img_path'])
+                    mesh_cam_render = out['mesh_cam_render']
+                    bbox = out['bbox']
+                    princpt = (bbox[0]+bbox[2]/2, bbox[1]+bbox[3]/2)
+                    img = vis_bbox(img, bbox, alpha=1)
 
-            if cfg.render:
-                img = cv2.imread(annot['img_path'])
-                mesh_cam_render = out['mesh_cam_render']
-                bbox = out['bbox']
-                princpt = (bbox[0]+bbox[2]/2, bbox[1]+bbox[3]/2)
-                img = vis_bbox(img, bbox, alpha=1)
+                    rendered_img = render_mesh(img, mesh_cam_render, self.face, {'focal': cfg.focal, 'princpt': princpt})
+                    
+                    # Mimi randomly imwrite
+                    render_img_path = os.path.join(vis_data_path, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_render.jpg')
+                    cv2.imwrite(render_img_path, rendered_img)
+                    # cv2.imshow(annot['img_path'], rendered_img/255)
+                    # cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
+                    # cv2.waitKey(1)
 
-                rendered_img = render_mesh(img, mesh_cam_render, self.face, {'focal': cfg.focal, 'princpt': princpt})
+                if cfg.vis:
+                    img = cv2.imread(annot['img_path'])
+                    bbox_to_vis = out['bbox']
 
-                cv2.imshow(annot['img_path'], rendered_img/255)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
-                cv2.waitKey(1)
+                    # vis input 2d pose
+                    pose_out_img = annot["openpose"] # 19, 3
+                    # pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
+                    pose_scores = pose_out_img[:, 2:].round(3)
+                    newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.openpose_skeleton, kp_thresh=0.4, alpha=1, kps_scores=pose_scores)
+                    newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
+                    cv2.imwrite(os.path.join(vis_data_path, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_input_2dpose.jpg'), newimg)
 
-            if cfg.vis:
-                img = cv2.imread(annot['img_path'])
-                bbox_to_vis = out['bbox']
+                    # vis PositionNet output
+                    pose_out_img = out['joint_img'] # 15, 2
 
-                # vis input 2d pose
-                # pose_out_img = out['input_joints']
-                # pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
-                # pose_scores = pose_out_img[:, 2:].round(3)
-                # newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.skeleton, kp_thresh=self.openpose_thr, alpha=1, kps_scores=pose_scores)
-                # newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
-                # cv2.imwrite(f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_input_2dpose.jpg', newimg)
+                    pose_scores = (out['joint_score']).round(3)
+                    pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
+                    pose_out_img = np.concatenate((pose_out_img, pose_out_img[:, :1]), axis=1)
+                    newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.smpl.graph_skeleton, kp_thresh=0.4, alpha=1, kps_scores=pose_scores)
+                    newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
+                    cv2.imwrite(os.path.join(vis_data_path, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_positionnet.jpg'), newimg)
 
-                # vis PositionNet output
-                pose_out_img = out['joint_img']
-                pose_scores = (out['joint_score']).round(3)
-                pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
-                pose_out_img = np.concatenate((pose_out_img, pose_out_img[:, :1]), axis=1)
-                newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.smpl.graph_skeleton, kp_thresh=0.4, alpha=1, kps_scores=pose_scores)
-                newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
-                cv2.imwrite(f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_positionnet.jpg', newimg)
+                    # vis RotationNet output
+                    pose_out_img = out['joint_proj']
 
-                # vis RotationNet output
-                pose_out_img = out['joint_proj']
+                    pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
+                    pose_out_img = np.concatenate((pose_out_img, pose_out_img[:, :1]), axis=1)
+                    newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.skeleton,
+                                                        kp_thresh=0.4, alpha=1)
+                    newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
+                    cv2.imwrite(os.path.join(vis_data_path, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_final.jpg'), newimg)
 
-                pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
-                pose_out_img = np.concatenate((pose_out_img, pose_out_img[:, :1]), axis=1)
-                newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.skeleton,
-                                                     kp_thresh=0.4, alpha=1)
-                newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
-                cv2.imwrite(f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_final.jpg', newimg)
+                    # save_obj(mesh_out_cam, self.face, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_final.obj')
 
-                save_obj(mesh_out_cam, self.face, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_final.obj')
+                    # vis gt
+                    # pose_gt_img[:, 2] = 1
+                    # newimg = vis_keypoints_with_skeleton(img.copy(), pose_gt_img.T, self.smpl.graph_skeleton,
+                    #                                     kp_thresh=0.4, alpha=1)
+                    # newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
+                    # cv2.imwrite(f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_gt.jpg', newimg)
 
-                # vis gt
-                pose_gt_img[:, 2] = 1
-                newimg = vis_keypoints_with_skeleton(img.copy(), pose_gt_img.T, self.smpl.graph_skeleton,
-                                                     kp_thresh=0.4, alpha=1)
-                newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
-                cv2.imwrite(f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_gt.jpg', newimg)
-
-                save_obj(mesh_gt_cam, self.face, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_gt.obj')
+                    # save_obj(mesh_gt_cam, self.face, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_gt.obj')
 
         return eval_result
 

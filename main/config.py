@@ -38,6 +38,7 @@ class Config:
     ## testing config
     test_batch_size = 64
     crowd = False
+    occlude = False # Mimi add from PARE 3dpw-occlude test
     vis = False
     render = False
 

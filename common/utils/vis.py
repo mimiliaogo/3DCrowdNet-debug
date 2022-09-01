@@ -101,7 +101,6 @@ def vis_keypoints_with_skeleton(img, kps, kps_lines, kp_thresh=0.4, alpha=1, kps
 
     # Perform the drawing on a copy of the image, to allow for blending.
     kp_mask = np.copy(img)
-
     # Draw the keypoints.
     for l in range(len(kps_lines)):
         i1 = kps_lines[l][0]
@@ -123,7 +122,6 @@ def vis_keypoints_with_skeleton(img, kps, kps_lines, kp_thresh=0.4, alpha=1, kps
 
             if kps_scores is not None:
                 cv2.putText(kp_mask, str(kps_scores[i2, 0]), p2, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
-
     # Blend the keypoints.
     return cv2.addWeighted(img, 1.0 - alpha, kp_mask, alpha, 0)
 

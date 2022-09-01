@@ -102,7 +102,7 @@ class Human36M(torch.utils.data.Dataset):
             with open(osp.join(self.annot_path, 'Human36M_subject' + str(subject) + '_joint_3d.json'),'r') as f:
                 joints[str(subject)] = json.load(f)
             # smpl parameter load
-            with open(osp.join(self.annot_path, 'Human36M_subject' + str(subject) + '_smpl_param.json'),'r') as f:
+            with open(osp.join(self.annot_path, 'SMPL parameters from SMPLify-X', 'Human36M_subject' + str(subject) + '_smpl_param.json'),'r') as f:
                 smpl_params[str(subject)] = json.load(f)
         db.createIndex()
 

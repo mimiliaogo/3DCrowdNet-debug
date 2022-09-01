@@ -23,9 +23,9 @@ class MuCo(torch.utils.data.Dataset):
     def __init__(self, transform, data_split):
         self.transform = transform
         self.data_split = data_split
-        self.img_dir = osp.join('..', 'data', 'MuCo', 'data')
-        self.annot_path = osp.join('..', 'data', 'MuCo', 'data', 'MuCo-3DHP.json')
-        self.smpl_param_path = osp.join('..', 'data', 'MuCo', 'data', 'smpl_param.json')
+        self.img_dir = osp.join('..', 'data', 'MuCo', 'images')
+        self.annot_path = osp.join('..', 'data', 'MuCo', 'MuCo-3DHP.json')
+        self.smpl_param_path = osp.join('..', 'data', 'MuCo', 'SMPL parameters from SMPLify-X', 'smpl_param.json')
         self.fitting_thr = 25 # milimeter
 
         # COCO joint set

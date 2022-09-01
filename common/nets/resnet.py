@@ -66,7 +66,7 @@ class ResNetBackbone(nn.Module):
         x2 = self.layer2(x1)
         x3 = self.layer3(x2)
         x4 = self.layer4(x3)
-
+        # MIMI: x4 layer output: (1, 2048, 8, 8)
         return x4
 
     def init_weights(self):

@@ -17,8 +17,8 @@ class Pose2Feat(nn.Module):
         self.conv = make_conv_layers([64+joint_num,64])
 
     def forward(self, img_feat, joint_heatmap):
-        feat = torch.cat((img_feat, joint_heatmap),1)
-        feat = self.conv(feat)
+        feat = torch.cat((img_feat, joint_heatmap),1) # 94, 64, 64
+        feat = self.conv(feat) # 64, 64, 64
         return feat
 
 
@@ -30,7 +30,7 @@ class PositionNet(nn.Module):
             self.joint_num = self.human_model.graph_joint_num
         else:
             self.human_model = SMPL()
-            self.joint_num = self.human_model.graph_joint_num
+            self.joint_num = self.human_model.graph_joint_num # MIMI: 15
 
         self.hm_shape = [cfg.output_hm_shape[0] // 8, cfg.output_hm_shape[1] // 8, cfg.output_hm_shape[2] // 8]
         self.conv = make_conv_layers([2048, self.joint_num * self.hm_shape[0]], kernel=1, stride=1, padding=0, bnrelu_final=False)
