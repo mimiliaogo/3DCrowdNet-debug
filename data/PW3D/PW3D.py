@@ -317,8 +317,8 @@ class PW3D(torch.utils.data.Dataset):
             eval_result['mpvpe'].append(mesh_error)
             
             # Mimi: visualize bad results
-            if mesh_error >= 150  or mpjpe >= 150:
-                vis_data_path = '/home/mtl519/Code/3DCrowdNet_RELEASE/output/test/vis-bad-3dpw-test'
+            if mesh_error >= 160  or mpjpe >= 150:
+                vis_data_path = '/home/mtl519/Code/3DCrowdNet_RELEASE/output/test/vis-bad-3dpw-crowd'
                 if cfg.render:
                     img = cv2.imread(annot['img_path'])
                     mesh_cam_render = out['mesh_cam_render']
@@ -344,7 +344,7 @@ class PW3D(torch.utils.data.Dataset):
                     pose_out_img = annot["openpose"] # 19, 3
                     # pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
                     pose_scores = pose_out_img[:, 2:].round(3)
-                    newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.openpose_skeleton, kp_thresh=0.4, alpha=1, kps_scores=pose_scores)
+                    newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.openpose_skeleton, kp_thresh=self.conf_thr, alpha=1, kps_scores=pose_scores)
                     newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
                     cv2.imwrite(os.path.join(vis_data_path, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_input_2dpose.jpg'), newimg)
 

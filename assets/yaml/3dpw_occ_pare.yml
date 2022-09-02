@@ -9,6 +9,6 @@ lr: 0.001
 lr_backbone: 0.0001
 lr_dec_factor: 10
 # crowd: True
-# occlude: True
+occlude: True
 render: True
 vis: True

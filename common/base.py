@@ -44,6 +44,9 @@ class Base(object):
 class Trainer(Base):
     def __init__(self):
         super(Trainer, self).__init__(log_name = 'train_logs.txt')
+        # Mimi add tensorboard
+        from torch.utils.tensorboard import SummaryWriter
+        self.writer = SummaryWriter(log_dir=cfg.log_dir)
 
     def get_optimizer(self, model):
         optimizer = torch.optim.Adam([
@@ -122,6 +125,12 @@ class Trainer(Base):
         self.itr_per_epoch = math.ceil(len(trainset_loader) / cfg.num_gpus / cfg.train_batch_size)
         self.batch_generator = DataLoader(dataset=trainset_loader, batch_size=cfg.num_gpus*cfg.train_batch_size, shuffle=True, num_workers=cfg.num_thread, pin_memory=True)
 
+        # testing loader
+        self.logger.info("Loading testing dataset...")
+        # make batch generator
+        testset_loader = eval(cfg.testset)(transforms.ToTensor(), "test")
+        self.testset = testset_loader
+        self.test_batch_generator = DataLoader(dataset=testset_loader, batch_size=cfg.num_gpus*cfg.test_batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
     def _make_model(self):
         # prepare network
         self.logger.info("Creating graph and optimizer...")
@@ -138,6 +147,13 @@ class Trainer(Base):
         self.model = model
         self.optimizer = optimizer
 
+    # mimi adds evaluation per epoch
+    def _evaluate(self, outs, cur_sample_idx):
+        eval_result = self.testset.evaluate(outs, cur_sample_idx)
+        return eval_result
+        
+    def _print_eval_result(self, eval_result):
+        self.testset.print_eval_result(eval_result)
 
 class Tester(Base):
     def __init__(self, test_epoch):

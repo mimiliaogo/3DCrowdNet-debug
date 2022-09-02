@@ -5,6 +5,8 @@ from base import Trainer
 import torch.backends.cudnn as cudnn
 import torch.cuda.amp as amp
 
+import numpy as np
+from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -42,6 +44,8 @@ def main():
     trainer._make_model()
 
     scaler = amp.GradScaler(init_scale=args.init_scale, enabled=args.use_mixed_precision)
+    # mimi add global step for tensorboard logging
+    train_global_step = 0
 
     # train
     for epoch in range(trainer.start_epoch, cfg.end_epoch):
@@ -77,12 +81,48 @@ def main():
                 '%.2fh/epoch' % (trainer.tot_timer.average_time / 3600. * trainer.itr_per_epoch),
                 ]
             screen += ['%s: %.4f' % ('loss_' + k, v.detach()) for k,v in loss.items()]
+            
+            # Mimi add tensorboard
+            for k, v in loss.items():
+                trainer.writer.add_scalar('train_loss/'+k, v, global_step=train_global_step)
+            trainer.writer.add_scalar('train_loss/total_loss', _loss, global_step=train_global_step)
+
             trainer.logger.info(' '.join(screen))
 
             trainer.tot_timer.toc()
             trainer.tot_timer.tic()
             trainer.read_timer.tic()
+
+            train_global_step += 1
+            
+        # Mimi: evaluation per epoch
+        trainer.logger.info('Start eval...')
+        eval_result = {}
+        cur_sample_idx = 0
+        for itr, (inputs, targets, meta_info) in enumerate(tqdm(trainer.test_batch_generator)):
+            
+            # forward
+            with torch.no_grad():
+                out = trainer.model(inputs, targets, meta_info, 'test')
+
+            # save output
+            out = {k: v.cpu().numpy() for k,v in out.items()}
+            for k,v in out.items(): batch_size = out[k].shape[0]
+            out = [{k: v[bid] for k,v in out.items()} for bid in range(batch_size)]
+
+            # evaluate
+            cur_eval_result = trainer._evaluate(out, cur_sample_idx)
+            for k,v in cur_eval_result.items():
+                if k in eval_result: eval_result[k] += v
+                else: eval_result[k] = v
+            cur_sample_idx += len(out)
+            
+        # log eval result
+        for k, v in eval_result.items():
+            trainer.writer.add_scalar('eval_acc/'+k, np.mean(v), global_step=train_global_step)
         
+        trainer._print_eval_result(eval_result)
+
         trainer.save_model({
             'epoch': epoch,
             'network': trainer.model.state_dict(),
