@@ -53,6 +53,9 @@ def main():
         trainer.set_lr(epoch)
         trainer.tot_timer.tic()
         trainer.read_timer.tic()
+        # start train
+        trainer.model.train()
+
         for itr, (inputs, targets, meta_info) in enumerate(trainer.batch_generator):
             trainer.read_timer.toc()
             trainer.gpu_timer.tic()
@@ -99,6 +102,7 @@ def main():
         trainer.logger.info('Start eval...')
         eval_result = {}
         cur_sample_idx = 0
+        trainer.model.eval()
         for itr, (inputs, targets, meta_info) in enumerate(tqdm(trainer.test_batch_generator)):
             
             # forward
@@ -120,8 +124,7 @@ def main():
         # log eval result
         for k, v in eval_result.items():
             trainer.writer.add_scalar('eval_acc/'+k, np.mean(v), global_step=train_global_step)
-        
-        trainer._print_eval_result(eval_result)
+            trainer.logger.info(k, np.mean(v))
 
         trainer.save_model({
             'epoch': epoch,
