@@ -124,7 +124,7 @@ def main():
         # log eval result
         for k, v in eval_result.items():
             trainer.writer.add_scalar('eval_acc/'+k, np.mean(v), global_step=train_global_step)
-            trainer.logger.info(k, np.mean(v))
+
 
         trainer.save_model({
             'epoch': epoch,
