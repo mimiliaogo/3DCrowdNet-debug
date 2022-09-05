@@ -58,7 +58,8 @@ class Config:
     # save_folder = 'exp_' + str(datetime.datetime.now(tz=KST))[5:-16]
     save_folder = 'exp_' + str(datetime.datetime.now())[5:-10]
     save_folder = save_folder.replace(" ", "_")
-    output_dir = osp.join(output_dir, save_folder)
+    save_name = '_3dpw_lr0.001_no_pretrained_reproduce'
+    output_dir = osp.join(output_dir, save_folder+save_name)
     print('output dir: ', output_dir)
 
     model_dir = osp.join(output_dir, 'checkpoint')
