@@ -34,7 +34,7 @@ def parse_args():
 def main():
     # argument parse and create log
     args = parse_args()
-    cfg.set_args(args.gpu_ids, args.continue_train, exp_dir=args.exp_dir)
+    cfg.set_args(args.gpu_ids, args.continue_train, exp_dir=args.exp_dir, cfg_file=args.cfg)
     cudnn.benchmark = True
     if args.cfg:
         cfg.update(args.cfg)

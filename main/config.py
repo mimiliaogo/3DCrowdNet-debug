@@ -58,7 +58,7 @@ class Config:
     # save_folder = 'exp_' + str(datetime.datetime.now(tz=KST))[5:-16]
     save_folder = 'exp_' + str(datetime.datetime.now())[5:-10]
     save_folder = save_folder.replace(" ", "_")
-    save_name = '_3dpw_lr0.001_no_pretrained_reproduce'
+    save_name = '_3dpw_lrbackbone0.0005_no_pretrained_reproduce_batch_128_num_worker_32'
     output_dir = osp.join(output_dir, save_folder+save_name)
     print('output dir: ', output_dir)
 
@@ -70,7 +70,7 @@ class Config:
     smpl_path = osp.join(root_dir, 'common', 'utils', 'smplpytorch')
     human_model_path = osp.join(root_dir, 'common', 'utils', 'human_model_files')
 
-    def set_args(self, gpu_ids, continue_train=False, is_test=False, exp_dir=''):
+    def set_args(self, gpu_ids, continue_train=False, is_test=False, exp_dir='', cfg_file=''):
         self.gpu_ids = gpu_ids
         self.num_gpus = len(self.gpu_ids.split(','))
         self.bbox_3d_size = 2
@@ -91,6 +91,10 @@ class Config:
             self.vis_dir = osp.join(self.output_dir, 'vis')
             self.log_dir = osp.join(self.output_dir, 'log')
             self.result_dir = osp.join(self.output_dir, 'result')
+
+        # mimi copy cfg file
+        if cfg_file:
+            shutil.copy(cfg_file, osp.join(cfg.model_dir, 'config.yaml'))
 
         os.environ["CUDA_VISIBLE_DEVICES"] = self.gpu_ids
         print('>>> Using GPU: {}'.format(self.gpu_ids))
