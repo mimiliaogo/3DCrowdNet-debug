@@ -14,7 +14,7 @@ from utils.posefix import replace_joint_img
 from utils.smpl import SMPL
 from utils.preprocessing import load_img, get_bbox, process_bbox, generate_patch_image, augmentation
 from utils.transforms import world2cam, cam2pixel, pixel2cam, rigid_align, transform_joint_to_other_db
-from utils.vis import vis_keypoints, vis_mesh, save_obj, vis_keypoints_with_skeleton, vis_bbox, render_mesh
+from utils.vis import vis_keypoints, vis_mesh, save_obj, vis_keypoints_with_skeleton, vis_bbox, render_mesh, vis_3d_skeleton
 
 
 class Human36M(torch.utils.data.Dataset):
@@ -282,7 +282,6 @@ class Human36M(torch.utils.data.Dataset):
             h36m_joint_trunc = h36m_joint_valid * ((h36m_joint_img[:,0] >= 0) * (h36m_joint_img[:,0] < cfg.output_hm_shape[2]) * \
                         (h36m_joint_img[:,1] >= 0) * (h36m_joint_img[:,1] < cfg.output_hm_shape[1]) * \
                         (h36m_joint_img[:,2] >= 0) * (h36m_joint_img[:,2] < cfg.output_hm_shape[0])).reshape(-1,1).astype(np.float32)
-
             """
             # print(f'{img_path} trunc:\n', h36m_joint_trunc.nonzero())
             print(data['joint_img'].shape, data['joint_cam'].shape)
@@ -293,6 +292,14 @@ class Human36M(torch.utils.data.Dataset):
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             cv2.waitKey(1)
+            """
+            """
+            # mimi debug
+            tmpimg = cv2.imread(img_path)
+            print('2d joint: ', data['joint_img'][:, 2])
+            cv2.imwrite('test_img.png', tmpimg)
+            vis = np.ones((17,1))
+            vis_3d_skeleton(data['joint_cam'], vis, self.h36m_skeleton)
             """
             # transform h36m joints to target db joints
             h36m_joint_img = transform_joint_to_other_db(h36m_joint_img, self.h36m_joints_name, self.joints_name)
