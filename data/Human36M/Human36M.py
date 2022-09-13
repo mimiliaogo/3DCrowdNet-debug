@@ -14,7 +14,7 @@ from utils.posefix import replace_joint_img
 from utils.smpl import SMPL
 from utils.preprocessing import load_img, get_bbox, process_bbox, generate_patch_image, augmentation
 from utils.transforms import world2cam, cam2pixel, pixel2cam, rigid_align, transform_joint_to_other_db
-from utils.vis import vis_keypoints, vis_mesh, save_obj, vis_keypoints_with_skeleton
+from utils.vis import vis_keypoints, vis_mesh, save_obj, vis_keypoints_with_skeleton, vis_bbox, render_mesh
 
 
 class Human36M(torch.utils.data.Dataset):
@@ -284,15 +284,16 @@ class Human36M(torch.utils.data.Dataset):
                         (h36m_joint_img[:,2] >= 0) * (h36m_joint_img[:,2] < cfg.output_hm_shape[0])).reshape(-1,1).astype(np.float32)
 
             """
-            print(f'{img_path} trunc:\n', h36m_joint_trunc.nonzero())
+            # print(f'{img_path} trunc:\n', h36m_joint_trunc.nonzero())
+            print(data['joint_img'].shape, data['joint_cam'].shape)
             tmp_coord = h36m_joint_img[:, :2] * np.array([[cfg.input_img_shape[1] / cfg.output_hm_shape[2], cfg.input_img_shape[0]/ cfg.output_hm_shape[1]]])
-            newimg = vis_keypoints(img.numpy().transpose(1,2,0), tmp_coord)
+            tmpimg = cv2.imread(img_path)
+            newimg = vis_keypoints(tmpimg, data['joint_img'])
             cv2.imshow(f'{img_path}', newimg)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             cv2.waitKey(1)
             """
-
             # transform h36m joints to target db joints
             h36m_joint_img = transform_joint_to_other_db(h36m_joint_img, self.h36m_joints_name, self.joints_name)
             h36m_joint_cam = transform_joint_to_other_db(h36m_joint_cam, self.h36m_joints_name, self.joints_name)
@@ -330,12 +331,20 @@ class Human36M(torch.utils.data.Dataset):
                 # vis smpl joint coord
                 tmpimg = cv2.imread(img_path)
                 newimg = vis_keypoints(tmpimg, smpl_coord_img[6890:])
+                cv2.imshow(f'{img_path}_kp', newimg)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+                cv2.waitKey(1)
+                import pdb; pdb.set_trace()
+                # mimi debug mesh
+                newimg = vis_mesh(tmpimg, smpl_coord_img[:6890])
                 cv2.imshow(f'{img_path}', newimg)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
                 cv2.waitKey(1)
                 import pdb; pdb.set_trace()
                 """
+
 
                 # affine transform x,y coordinates, root-relative depth
                 smpl_coord_img_xy1 = np.concatenate((smpl_coord_img[:,:2], np.ones_like(smpl_coord_img[:,:1])),1)
@@ -397,6 +406,8 @@ class Human36M(torch.utils.data.Dataset):
             inputs = {'img': img, 'joints': input_h36m_joint_img[:, :2], 'joints_mask': joint_mask}
             targets = {'orig_joint_img': h36m_joint_img, 'fit_joint_img': smpl_joint_img, 'orig_joint_cam': h36m_joint_cam, 'fit_joint_cam': smpl_joint_cam, 'pose_param': smpl_pose, 'shape_param': smpl_shape}
             meta_info = {'orig_joint_valid': h36m_joint_valid, 'orig_joint_trunc': h36m_joint_trunc, 'fit_param_valid': smpl_param_valid, 'fit_joint_trunc': smpl_joint_trunc, 'is_valid_fit': float(is_valid_fit), 'is_3D': float(True)}
+            
+       
             return inputs, targets, meta_info
         else:
             inputs = {'img': img}

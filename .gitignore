@@ -198,7 +198,9 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
+# mimi add
 data/*
 demo/input/*
 demo/output/*
 *.pth.tar
+output/*

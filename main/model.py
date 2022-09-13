@@ -118,6 +118,12 @@ class Model(nn.Module):
             loss['body_joint_cam'] = self.coord_loss(joint_cam, targets['orig_joint_cam'], meta_info['orig_joint_valid'] * meta_info['is_3D'][:, None, None])
             loss['smpl_joint_cam'] = self.coord_loss(joint_cam, targets['fit_joint_cam'], meta_info['is_valid_fit'][:, None, None])
 
+            # MIMI DEBUG
+            # loss['body_joint_img'] = torch.zeros_like(loss['body_joint_img'])
+            # loss['smpl_joint_img'] = torch.zeros_like( loss['smpl_joint_img'])
+            # loss['body_joint_proj'] = torch.zeros_like(loss['body_joint_proj'])
+            # loss['body_joint_cam'] = torch.zeros_like(loss['body_joint_cam'])
+            # loss['smpl_joint_cam'] = torch.zeros_like(loss['smpl_joint_cam'])
             return loss
 
         else:

@@ -317,8 +317,9 @@ class PW3D(torch.utils.data.Dataset):
             eval_result['mpvpe'].append(mesh_error)
             
             # Mimi: visualize bad results
-            if mesh_error >= 160  or mpjpe >= 150:
+            if (cfg.render or cfg.vis) and (mesh_error >= 160  or mpjpe >= 150):
                 vis_data_path = '/home/mtl519/Code/3DCrowdNet_RELEASE/output/test/vis-bad-3dpw-crowd'
+                # render mesh on 2d image
                 if cfg.render:
                     img = cv2.imread(annot['img_path'])
                     mesh_cam_render = out['mesh_cam_render']

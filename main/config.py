@@ -58,7 +58,8 @@ class Config:
     # save_folder = 'exp_' + str(datetime.datetime.now(tz=KST))[5:-16]
     save_folder = 'exp_' + str(datetime.datetime.now())[5:-10]
     save_folder = save_folder.replace(" ", "_")
-    save_name = '_3dpw_lrbackbone0.0005_no_pretrained_reproduce_batch_128_num_worker_32'
+    save_name = '_3dpw_only_human_exclude_3djoint_no_pretrained_reproduce'
+    # save_name = '_test'
     output_dir = osp.join(output_dir, save_folder+save_name)
     print('output dir: ', output_dir)
 
