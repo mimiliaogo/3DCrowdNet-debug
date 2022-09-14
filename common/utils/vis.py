@@ -197,7 +197,8 @@ def vis_3d_skeleton(kpt_3d, kpt_3d_vis, kps_lines, filename=None):
     ax.set_zlabel('Y Label')
     ax.legend()
 
-    plt.show()
+    # plt.show()
+    plt.savefig(filename)
     cv2.waitKey(0)
 
 def save_obj(v, f, file_name='output.obj'):

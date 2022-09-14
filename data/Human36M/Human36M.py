@@ -297,10 +297,11 @@ class Human36M(torch.utils.data.Dataset):
             # mimi debug
             tmpimg = cv2.imread(img_path)
             print('2d joint: ', data['joint_img'][:, 2])
-            cv2.imwrite('test_img.png', tmpimg)
+            cv2.imwrite(f'{img_path.split("/")[-1]}', tmpimg)
             vis = np.ones((17,1))
-            vis_3d_skeleton(data['joint_cam'], vis, self.h36m_skeleton)
+            vis_3d_skeleton(data['joint_cam'], vis, self.h36m_skeleton, f'{img_path.split("/")[-1]}_kp.jpg')
             """
+
             # transform h36m joints to target db joints
             h36m_joint_img = transform_joint_to_other_db(h36m_joint_img, self.h36m_joints_name, self.joints_name)
             h36m_joint_cam = transform_joint_to_other_db(h36m_joint_cam, self.h36m_joints_name, self.joints_name)
