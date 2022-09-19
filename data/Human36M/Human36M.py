@@ -153,14 +153,15 @@ class Human36M(torch.utils.data.Dataset):
             joint_valid = np.ones((self.h36m_joint_num,1))
             
             # # mimi debug
+            # print(joint_cam)
+            # print(joint_img)
             # tmpimg = cv2.imread(img_path)
-            # print(img_path)
-            # print('joint_img load', joint_img)
+            # cv2.imwrite(f'{img_path.split("/")[-1]}', tmpimg)
             # newimg = vis_keypoints(tmpimg, joint_img)
-            # cv2.imshow(f'{img_path}', newimg)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-            # cv2.waitKey(1)
+            # cv2.imwrite(f'{img_path.split("/")[-1]}_kp2d.jpg', newimg)
+            # vis = np.ones((17,1))
+            # vis_3d_skeleton(joint_cam, vis, self.h36m_skeleton, f'{img_path.split("/")[-1]}_kp3d.jpg')
+            # assert False
 
             tight_bbox = np.array(ann['bbox'])
             if self.data_split == 'test' and not cfg.use_gt_info:
@@ -262,7 +263,15 @@ class Human36M(torch.utils.data.Dataset):
         data = copy.deepcopy(self.datalist[idx])
 
         img_path, img_shape, bbox, smpl_param, cam_param = data['img_path'], data['img_shape'], data['bbox'], data['smpl_param'], data['cam_param']
-         
+    
+        # mimi debug
+        # tmpimg = cv2.imread(img_path)
+        # cv2.imwrite(f'{img_path.split("/")[-1]}', tmpimg)
+        # newimg = vis_keypoints(tmpimg, data['joint_img'])
+        # cv2.imwrite(f'{img_path.split("/")[-1]}_kp2d.jpg', newimg)
+        # vis = np.ones((17,1))
+        # vis_3d_skeleton(data['joint_cam'], vis, self.h36m_skeleton, f'{img_path.split("/")[-1]}_kp3d.jpg')
+
         # img
         img = load_img(img_path)
         img, img2bb_trans, bb2img_trans, rot, do_flip = augmentation(img, bbox, self.data_split)

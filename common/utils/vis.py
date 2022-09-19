@@ -172,20 +172,20 @@ def vis_3d_skeleton(kpt_3d, kpt_3d_vis, kps_lines, filename=None):
     cmap = plt.get_cmap('rainbow')
     colors = [cmap(i) for i in np.linspace(0, 1, len(kps_lines) + 2)]
     colors = [np.array((c[2], c[1], c[0])) for c in colors]
-
     for l in range(len(kps_lines)):
         i1 = kps_lines[l][0]
         i2 = kps_lines[l][1]
         x = np.array([kpt_3d[i1,0], kpt_3d[i2,0]])
         y = np.array([kpt_3d[i1,1], kpt_3d[i2,1]])
         z = np.array([kpt_3d[i1,2], kpt_3d[i2,2]])
-
         if kpt_3d_vis[i1,0] > 0 and kpt_3d_vis[i2,0] > 0:
             ax.plot(x, z, -y, c=colors[l], linewidth=2)
         if kpt_3d_vis[i1,0] > 0:
             ax.scatter(kpt_3d[i1,0], kpt_3d[i1,2], -kpt_3d[i1,1], c=colors[l], marker='o')
+            ax.text(kpt_3d[i1,0], kpt_3d[i1,2], -kpt_3d[i1,1], str(i1))
         if kpt_3d_vis[i2,0] > 0:
             ax.scatter(kpt_3d[i2,0], kpt_3d[i2,2], -kpt_3d[i2,1], c=colors[l], marker='o')
+            ax.text(kpt_3d[i2,0], kpt_3d[i2,2], -kpt_3d[i2,1], str(i2))
 
     if filename is None:
         ax.set_title('3D vis')
@@ -195,6 +195,12 @@ def vis_3d_skeleton(kpt_3d, kpt_3d_vis, kps_lines, filename=None):
     ax.set_xlabel('X Label')
     ax.set_ylabel('Z Label')
     ax.set_zlabel('Y Label')
+
+    ax.set_xticks(np.linspace(100, -500, 6))
+    ax.set_zticks(np.linspace(-600, 800, 14))
+    ax.set_yticks(np.linspace(5200, 5600, 4))
+    ax.set_box_aspect([600, 400, 1400])
+    
     ax.legend()
 
     # plt.show()
