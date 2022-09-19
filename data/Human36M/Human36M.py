@@ -151,6 +151,16 @@ class Human36M(torch.utils.data.Dataset):
             joint_cam = world2cam(joint_world, R, t)
             joint_img = cam2pixel(joint_cam, f, c)
             joint_valid = np.ones((self.h36m_joint_num,1))
+            
+            # # mimi debug
+            # tmpimg = cv2.imread(img_path)
+            # print(img_path)
+            # print('joint_img load', joint_img)
+            # newimg = vis_keypoints(tmpimg, joint_img)
+            # cv2.imshow(f'{img_path}', newimg)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+            # cv2.waitKey(1)
 
             tight_bbox = np.array(ann['bbox'])
             if self.data_split == 'test' and not cfg.use_gt_info:
@@ -177,6 +187,7 @@ class Human36M(torch.utils.data.Dataset):
                 'near_joints': np.zeros((1, self.coco_joint_num, 3), dtype=np.float32)  # coco_joint_num
 
             })
+    
             
         return datalist
 
@@ -249,6 +260,7 @@ class Human36M(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         data = copy.deepcopy(self.datalist[idx])
+
         img_path, img_shape, bbox, smpl_param, cam_param = data['img_path'], data['img_shape'], data['bbox'], data['smpl_param'], data['cam_param']
          
         # img
@@ -282,17 +294,20 @@ class Human36M(torch.utils.data.Dataset):
             h36m_joint_trunc = h36m_joint_valid * ((h36m_joint_img[:,0] >= 0) * (h36m_joint_img[:,0] < cfg.output_hm_shape[2]) * \
                         (h36m_joint_img[:,1] >= 0) * (h36m_joint_img[:,1] < cfg.output_hm_shape[1]) * \
                         (h36m_joint_img[:,2] >= 0) * (h36m_joint_img[:,2] < cfg.output_hm_shape[0])).reshape(-1,1).astype(np.float32)
-            """
+            
             # print(f'{img_path} trunc:\n', h36m_joint_trunc.nonzero())
-            print(data['joint_img'].shape, data['joint_cam'].shape)
-            tmp_coord = h36m_joint_img[:, :2] * np.array([[cfg.input_img_shape[1] / cfg.output_hm_shape[2], cfg.input_img_shape[0]/ cfg.output_hm_shape[1]]])
-            tmpimg = cv2.imread(img_path)
-            newimg = vis_keypoints(tmpimg, data['joint_img'])
-            cv2.imshow(f'{img_path}', newimg)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            cv2.waitKey(1)
-            """
+            # print(data['joint_img'].shape, data['joint_cam'].shape)
+            # tmp_coord = h36m_joint_img[:, :2] * np.array([[cfg.input_img_shape[1] / cfg.output_hm_shape[2], cfg.input_img_shape[0]/ cfg.output_hm_shape[1]]])
+            # tmpimg = cv2.imread(img_path)
+            # print('joint img', tmp_coord)
+            # tmpimg = img.numpy().transpose(1,2,0) * 255
+            # tmpimg = np.ascontiguousarray(tmpimg, dtype=np.uint8)
+            # newimg = vis_keypoints(tmpimg, tmp_coord)
+            # cv2.imshow(f'{img_path}', newimg)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+            # cv2.waitKey(1)
+            # assert False
             """
             # mimi debug
             tmpimg = cv2.imread(img_path)

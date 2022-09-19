@@ -42,6 +42,10 @@ class PW3D(torch.utils.data.Dataset):
         self.h36m_root_joint_idx = self.h36m_joints_name.index('Pelvis')
         self.h36m_eval_joint = (1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14, 15, 16)
         self.h36m_joint_regressor = np.load(osp.join('..', 'data', 'Human36M', 'J_regressor_h36m_correct.npy'))
+        # mimi add 
+        # self.h36m_eval_skeleton = ((7, 8), (8, 9), (9, 10), (8, 11), (11, 12), (12, 13), (8, 14), (14, 15), (15, 16), (1, 2), (2, 3), (4, 5), (5, 6) )
+        # self.h36m_eval_skeleton = list(map(lambda x: (x[0]-1, x[1]-1), self.h36m_eval_skeleton))
+        # print(self.h36m_eval_skeleton)  
 
         # mscoco skeleton
         self.coco_joint_num = 18+1 # original: 17, manually added pelvis
@@ -211,10 +215,11 @@ class PW3D(torch.utils.data.Dataset):
         joint_valid[joint_coord_img[:, 2] <= pose_thr] = 0
 
         # get bbox from joints
-        bbox = get_bbox(joint_coord_img, joint_valid[:, 0])
-        img_height, img_width = data['img_shape']
-        bbox = process_bbox(bbox.copy(), img_width, img_height, is_3dpw_test=True)
-        bbox = data['bbox'] if bbox is None else bbox
+        # bbox = get_bbox(joint_coord_img, joint_valid[:, 0])
+        # img_height, img_width = data['img_shape']
+        # bbox = process_bbox(bbox.copy(), img_width, img_height, is_3dpw_test=True)
+        # bbox = data['bbox'] if bbox is None else bbox
+        bbox = data['tight_bbox']
 
         # img
         img = load_img(img_path)
@@ -318,7 +323,8 @@ class PW3D(torch.utils.data.Dataset):
             
             # Mimi: visualize bad results
             if (cfg.render or cfg.vis) and (mesh_error >= 160  or mpjpe >= 150):
-                vis_data_path = '/home/mtl519/Code/3DCrowdNet_RELEASE/output/test/vis-bad-3dpw-crowd'
+                vis_data_path = '../output/test/vis-new-bad-3dpw-crowd-annot-tight-bbox'
+                os.makedirs(vis_data_path, exist_ok=True)
                 # render mesh on 2d image
                 if cfg.render:
                     img = cv2.imread(annot['img_path'])
@@ -342,7 +348,11 @@ class PW3D(torch.utils.data.Dataset):
                     bbox_to_vis = out['bbox']
 
                     # vis input 2d pose
-                    pose_out_img = annot["openpose"] # 19, 3
+                    if cfg.crowd: 
+                        pose_out_img = annot['hhrnetpose']# 19, 3
+                    else:
+                        pose_out_img = annot["openpose"] # 19, 3
+
                     # pose_out_img = denorm_joints(pose_out_img, out['bb2img_trans'])
                     pose_scores = pose_out_img[:, 2:].round(3)
                     newimg = vis_keypoints_with_skeleton(img.copy(), pose_out_img.T, self.openpose_skeleton, kp_thresh=self.conf_thr, alpha=1, kps_scores=pose_scores)
@@ -368,6 +378,7 @@ class PW3D(torch.utils.data.Dataset):
                                                         kp_thresh=0.4, alpha=1)
                     newimg = vis_bbox(newimg, bbox_to_vis, alpha=1)
                     cv2.imwrite(os.path.join(vis_data_path, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_final.jpg'), newimg)
+
 
                     # save_obj(mesh_out_cam, self.face, f'./{annot["img_path"].split("_")[-1][:-4]}_{out["aid"]}_final.obj')
 
