@@ -215,11 +215,11 @@ class PW3D(torch.utils.data.Dataset):
         joint_valid[joint_coord_img[:, 2] <= pose_thr] = 0
 
         # get bbox from joints
-        # bbox = get_bbox(joint_coord_img, joint_valid[:, 0])
-        # img_height, img_width = data['img_shape']
-        # bbox = process_bbox(bbox.copy(), img_width, img_height, is_3dpw_test=True)
-        # bbox = data['bbox'] if bbox is None else bbox
-        bbox = data['tight_bbox']
+        bbox = get_bbox(joint_coord_img, joint_valid[:, 0])
+        img_height, img_width = data['img_shape']
+        bbox = process_bbox(bbox.copy(), img_width, img_height, is_3dpw_test=True)
+        bbox = data['bbox'] if bbox is None else bbox
+        # bbox = data['tight_bbox']
 
         # img
         img = load_img(img_path)
@@ -323,7 +323,7 @@ class PW3D(torch.utils.data.Dataset):
             
             # Mimi: visualize bad results
             if (cfg.render or cfg.vis) and (mesh_error >= 160  or mpjpe >= 150):
-                vis_data_path = '../output/test/vis-new-bad-3dpw-crowd-annot-tight-bbox'
+                vis_data_path = '../output/test/vis-human3.6-debug'
                 os.makedirs(vis_data_path, exist_ok=True)
                 # render mesh on 2d image
                 if cfg.render:
